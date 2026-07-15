@@ -1,0 +1,417 @@
+{
+  "name": "LAWYERS KIT",
+  "nodes": [
+    {
+      "parameters": {
+        "useCustomSchema": true,
+        "tableId": "lawyers",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "full_name",
+              "fieldValue": "={{ $('On form submission').item.json['FULL_NAME _ATTORNEY'] }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $('On form submission').item.json.EMAIL }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        96,
+        -16
+      ],
+      "id": "ea074cb4-dd53-4670-954e-62b528a02093",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "DGJWMFQGq7AXfWzJ",
+          "name": "Supabase account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "corporate_clients",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "lawyer_id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "company_name",
+              "fieldValue": "={{ $('On form submission').item.json.CLIENT }}"
+            },
+            {
+              "fieldId": "business_registration_number",
+              "fieldValue": "={{ $('On form submission').item.json.BUSINESS_REGISTRATION_NUMBER }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        256,
+        -16
+      ],
+      "id": "59432e52-a9de-4039-8308-5325d34844ec",
+      "name": "Create a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "DGJWMFQGq7AXfWzJ",
+          "name": "Supabase account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "UPLOAD_THE_CONTRACT",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        -16
+      ],
+      "id": "9cf2e575-948f-4257-a3b7-2fa484bac2dc",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "tableId": "contracts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "client_id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $('Extract from File').item.json.info.Title }}"
+            },
+            {
+              "fieldId": "raw_payload",
+              "fieldValue": "={{ $('Extract from File').item.json.text }}"
+            },
+            {
+              "fieldId": "renewal_deadline",
+              "fieldValue": "={{ $('On form submission').item.json['RENEWAL DATE'] }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -16
+      ],
+      "id": "9f936f13-9d72-4ec9-9c8f-28c5108c5257",
+      "name": "Create a row2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "DGJWMFQGq7AXfWzJ",
+          "name": "Supabase account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "=You are a highly experienced Corporate Attorney and Chief Legal Risk Officer with over 10 years of expertise in identifying hidden liabilities, commercial vulnerabilities, and predatory clauses in business contracts. Your primary goal is to protect your client, a retail corporate entity, from legal exposure.\n\n[CONTEXT ENVIRONMENT]\nYou are embedded inside an automated multi-tenant legal extraction software. You will be handed raw, unstructured text extracted from a business contract. You must analyze the text meticulously and extract an array of all distinct clauses containing risks or legal exposures.\n\n[OUTPUT DIRECTIVES]\nYou must respond strictly with a valid JSON array of objects. Do not include markdown code blocks like ```json ... ```, do not include introductory text, and do not include conversational concluding remarks. Output raw JSON only.\nhere it is:\n[{{ $json.raw_payload }}]\n\nEach object in the JSON array must strictly contain these three keys:\n1. \"clause_text\": The exact, verbatim sentence or phrase extracted directly from the contract text that presents the legal issue. Do not paraphrase or shorten it.\n2. \"risk_description\": A precise, analytical explanation written by a 10-year advocate explaining why this specific clause exposes the client to damages, liabilities, financial loss, or unfair legal operational bounds.\n3. \"risk_rating\": A severity mapping based on strict operational impact. Must be exactly one of these strings: \"High\", \"Medium\", or \"Low\".\n\n[RISK RATING METRICS]\n- \"High\": Uncapped liabilities, total one-sided indemnification, automatic multi-year financial renewals with no notice windows, or immediate loss of core operational rights.\n- \"Medium\": Overly aggressive interest penalties, mid-tier pricing hikes without notice, or highly unequal termination notice durations.\n- \"Low\": Small operational inconveniences, standard minor fee increases, or minor reporting penalties.\n\n[FEW-SHOT TRAINING EXAMPLES]\n\nEXAMPLE 1:\nContract Input: \"The Buyer agrees to defend and indemnify the Supplier from all legal fees arising out of the performance of this contract, including instances where goods are damaged due to the Supplier’s sole negligence. The Buyer’s liability under this section shall be completely uncapped.\"\nJSON Output:\n[\n{\n\"clause_text\": \"The Buyer agrees to defend and indemnify the Supplier from all legal fees arising out of the performance of this contract, including instances where goods are damaged due to the Supplier’s sole negligence. The Buyer’s liability under this section shall be completely uncapped.\",\n\"risk_description\": \"This clause forces the client to pay for legal damages even when the vendor causes the damage through their own carelessness. Furthermore, because liability is uncapped, a single major lawsuit could bankrupt the client's business.\",\n\"risk_rating\": \"High\"\n}\n]\n\nEXAMPLE 2:\nContract Input: \"The Supplier reserves the right to increase unit pricing on all commercial goods by up to 25% at any time without prior written notice to the Buyer.\"\nJSON Output:\n[\n{\n\"clause_text\": \"The Supplier reserves the right to increase unit pricing on all commercial goods by up to 25% at any time without prior written notice to the Buyer.\",\n\"risk_description\": \"Allows the vendor to increase prices drastically (25%) without warning. This makes financial budgeting impossible and prevents the client from switching vendors before higher prices take effect.\",\n\"risk_rating\": \"Medium\"\n}\n]\n\nEXAMPLE 3:\nContract Input: \"Any invoice left unpaid after 15 days will automatically accrue interest at a compound rate of 4.5% per week, compounded daily, until the balance is paid.\"\nJSON Output:\n[\n{\n\"clause_text\": \"Any invoice left unpaid after 15 days will automatically accrue interest at a compound rate of 4.5% per week, compounded daily, until the balance is paid.\",\n\"risk_description\": \"An extremely predatory interest penalty. Compounding 4.5% interest on a weekly and daily basis results in rapid debt inflation, penalizing minor administrative payment delays unfairly.\",\n\"risk_rating\": \"Medium\"\n}\n]\n\nEXAMPLE 4:\nContract Input: \"The Supplier may terminate this Agreement immediately for any reason upon providing five (5) days written notice. No reciprocal right of immediate termination is granted to the Buyer.\"\nJSON Output:\n[\n{\n\"clause_text\": \"The Supplier may terminate this Agreement immediately for any reason upon providing five (5) days written notice. No reciprocal right of immediate termination is granted to the Buyer.\",\n\"risk_description\": \"Creates a severe operational threat. The vendor can drop the client with almost zero warning, potentially freezing retail supply lines while denying the client the same flexibility to cancel.\",\n\"risk_rating\": \"High\"\n}\n]\n\n[TARGET CONTRACT TEXT FOR ANALYSIS]\nAnalyze the text provided below and output the structured JSON array adhering strictly to the legal standards and layout illustrated above.\n\nContract Text:\n\n",
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "[\n{\n\"clause_text\": \"This contract shall automatically renew for an additional three-year term unless either party provides written notice of non-renewal at least ninety (90) days prior to the expiration date, which is explicitly set as April 16, 2027. Failure to notify within this window legally binds the Buyer to the renewal rates.\",\n\"risk_description\": \"Creates an aggressive multi-year financial lock-in. Missing the 90-day deadline forces the client into a 3-year commitment at uncompetitive rates without a chance to renegotiate terms.\",\n\"risk_rating\": \"High\"\n},\n{\n\"clause_text\": \"the Buyer (BM Basket Mart) agrees to defend, indemnify, and hold harmless the Supplier from and against any and all claims, losses, damages, liabilities, and expenses (including legal fees) arising out of or resulting from the performance of this contract, including instances where goods are damaged due to the Supplier’s sole negligence or faulty transport equipment. The Buyer’s liability under this section shall be absolute and completely uncapped.\",\n\"risk_description\": \"Shifts all legal responsibility onto the client, even for mistakes caused directly by the supplier's poor equipment or negligence. The completely uncapped liability exposes the company to infinite financial damage.\",\n\"risk_rating\": \"High\"\n},\n{\n\"clause_text\": \"The Supplier reserves the right to increase unit pricing on all grocery and commercial goods by up to 25% at any time without prior written notice to the Buyer, based on fluctuating market fuel costs and supply chain constraints.\",\n\"risk_description\": \"Allows unexpected 25% cost increases without advance warning. This ruins retail margin predictability and prevents the client from sourcing cheaper alternatives before price hikes hit.\",\n\"risk_rating\": \"Medium\"\n},\n{\n\"clause_text\": \"Any invoice left unpaid after 15 days will automatically accrue interest at a compound rate of 4.5% per week, compounded daily, until the balance is paid in full.\",\n\"risk_description\": \"An extremely predatory interest penalty structure. Compounding daily on a high weekly percentage means minor administrative payment delays will cause rapid, uncontrolled debt growth.\",\n\"risk_rating\": \"Medium\"\n},\n{\n\"clause_text\": \"The Supplier may terminate this Agreement immediately for any reason or no reason at all upon providing five (5) days written notice. No reciprocal right of immediate termination is granted to the Buyer. In the event of a product recall or contamination issue tracing back to the Supplier's freight vehicles, the Buyer must continue making scheduled payments for all outstanding logistics operations until a formal dispute resolution meeting is completed.\",\n\"risk_description\": \"Severe operational threat. The supplier can freeze supply lines with a 5-day warning. Worse, forcing the client to pay during a supplier-caused food contamination recall creates catastrophic liability gaps.\",\n\"risk_rating\": \"High\"\n}\n]\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        -16
+      ],
+      "id": "93bcec53-0f10-49b8-adba-077987152853",
+      "name": "Information Extractor",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        656,
+        144
+      ],
+      "id": "74d65d9b-9b03-4378-a7f4-9ce4262ea885",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        912,
+        -16
+      ],
+      "id": "1bd8f871-9ebb-4278-9e26-16f48ade84d7",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "tableId": "risk_clauses",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "contract_id",
+              "fieldValue": "={{ $('Create a row2').item.json.id }}"
+            },
+            {
+              "fieldId": "clause_text",
+              "fieldValue": "={{ $json.output.clause_text }}"
+            },
+            {
+              "fieldId": "risk_description",
+              "fieldValue": "={{ $json.output.risk_description }}"
+            },
+            {
+              "fieldId": "risk_rating",
+              "fieldValue": "={{ $json.output.risk_rating }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        -16
+      ],
+      "id": "1453d602-5c32-4056-9eee-0b32c9c339de",
+      "name": "Create a row3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "DGJWMFQGq7AXfWzJ",
+          "name": "Supabase account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let responseText = \"### 🚨 Contract Risk Assessment Summary\\n\\nI have successfully analyzed the contract and identified **\" + $input.all().length + \"** critical risk elements:\\n\\n\";\n\nfor (let i = 0; i < $input.all().length; i++) {\n// Pull fields directly from the Supabase row output structure\nlet risk = $input.all()[i].json;\n\nresponseText += `🔹 **Risk #${i + 1} [${risk.risk_rating || 'Unknown'}]**\\n`;\nresponseText += `* **Clause:** \"${risk.clause_text || 'No text found'}\"\\n`;\nresponseText += `* **Analysis:** ${risk.risk_description || 'No analysis found'}\\n\\n`;\n}\n\nresponseText += \"---\\n*All identified risks have been securely logged into the database.*\";\n\nreturn [{ json: { formatted_chat_response: responseText } }];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        -16
+      ],
+      "id": "3f43ee95-1f43-41de-a863-c7c37c0d339b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "formTitle": "LEGAL RISK EXECUTION FORM",
+        "formDescription": "FILL IN THE DETAILS",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "FULL_NAME _ATTORNEY"
+            },
+            {
+              "fieldLabel": "EMAIL"
+            },
+            {
+              "fieldLabel": "CLIENT"
+            },
+            {
+              "fieldLabel": "BUSINESS_REGISTRATION_NUMBER"
+            },
+            {
+              "fieldLabel": "UPLOAD THE CONTRACT",
+              "fieldType": "file"
+            },
+            {
+              "fieldLabel": "RENEWAL DATE",
+              "fieldType": "date"
+            }
+          ]
+        },
+        "options": {
+          "buttonLabel": "Submit",
+          "customCss": ":root {\n\t--font-family: 'Open Sans', sans-serif;\n\t--font-weight-normal: 400;\n\t--font-weight-bold: 600;\n\t--font-size-body: 12px;\n\t--font-size-label: 14px;\n\t--font-size-test-notice: 12px;\n\t--font-size-input: 14px;\n\t--font-size-header: 20px;\n\t--font-size-paragraph: 14px;\n\t--font-size-link: 12px;\n\t--font-size-error: 12px;\n\t--font-size-html-h1: 28px;\n\t--font-size-html-h2: 20px;\n\t--font-size-html-h3: 16px;\n\t--font-size-html-h4: 14px;\n\t--font-size-html-h5: 12px;\n\t--font-size-html-h6: 10px;\n\t--font-size-subheader: 14px;\n\n\t/* Colors */\n\t--color-background: #fbfcfe;\n\t--color-test-notice-text: #e6a23d;\n\t--color-test-notice-bg: #fefaf6;\n\t--color-test-notice-border: #f6dcb7;\n\t--color-card-bg: #ffffff;\n\t--color-card-border: #dbdfe7;\n\t--color-card-shadow: rgba(99, 77, 255, 0.06);\n\t--color-link: #7e8186;\n\t--color-header: #525356;\n\t--color-label: #555555;\n\t--color-input-border: #dbdfe7;\n\t--color-input-text: #71747A;\n\t--color-focus-border: rgb(90, 76, 194);\n\t--color-submit-btn-bg: #ff6d5a;\n\t--color-submit-btn-text: #ffffff;\n\t--color-error: #ea1f30;\n\t--color-required: #ff6d5a;\n\t--color-clear-button-bg: #7e8186;\n\t--color-html-text: #555;\n\t--color-html-link: #ff6d5a;\n\t--color-header-subtext: #7e8186;\n\n\t/* Border Radii */\n\t--border-radius-card: 8px;\n\t--border-radius-input: 6px;\n\t--border-radius-clear-btn: 50%;\n\t--card-border-radius: 8px;\n\n\t/* Spacing */\n\t--padding-container-top: 24px;\n\t--padding-card: 24px;\n\t--padding-test-notice-vertical: 12px;\n\t--padding-test-notice-horizontal: 24px;\n\t--margin-bottom-card: 16px;\n\t--padding-form-input: 12px;\n\t--card-padding: 24px;\n\t--card-margin-bottom: 16px;\n\n\t/* Dimensions */\n\t--container-width: 448px;\n\t--submit-btn-height: 48px;\n\t--checkbox-size: 18px;\n\n\t/* Others */\n\t--box-shadow-card: 0px 4px 16px 0px var(--color-card-shadow);\n\t--opacity-placeholder: 0.5;\n}"
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -240,
+        -16
+      ],
+      "id": "754800ab-43dc-4cc7-8a3c-57d1bdec0279",
+      "name": "On form submission",
+      "webhookId": "7deec331-dba2-479e-ad6c-674999ca37b6"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "THE EVALUATION IS HERE ",
+        "completionMessage": "={{ $json.formatted_chat_response }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1408,
+        -16
+      ],
+      "id": "59c1078e-0299-46f7-9213-79c5dca3caa7",
+      "name": "Form",
+      "webhookId": "df2361ad-f6c4-4ac1-9c71-4d1950bade90"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Create a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row1": {
+      "main": [
+        [
+          {
+            "node": "Create a row2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row2": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Create a row3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "fc164297-1bde-454d-b2d4-8cb991b8cfa0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d563dfad70bf14120f46bfb1c88c5939296293760ff46b9cec36d223253b4238"
+  },
+  "nodeGroups": [],
+  "id": "RqgFpOL55mdedwHQ",
+  "tags": []
+}
